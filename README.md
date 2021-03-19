@@ -1,7 +1,6 @@
 # upyclock
 Small micropython network-synced clock, using a ESP-WROOM32 and a HW069 I2C 4-digits 7-segments display.
 
-
 ## pinout
 
 HW-069:
@@ -10,7 +9,11 @@ HW-069:
  * VCC: 3v3
  * GND: GND
 
-## WLAN format
+## wifi.dat
+You need a wifi.dat file in the root folder.
+
+Formatting goes as follows:
+
 ```
 SSID1
 SSID1pass
@@ -20,7 +23,7 @@ SSID2pass
 SSIDn
 SSIDnpass
 ```
-## Timezone format
+## timezone.dat
 Defaults to UTC. Add an integer for an integer amount of hours timezone delta.
 
-E.g. _1_ means UTC+1
+E.g. _1_ (sans underscores) means UTC+1.
