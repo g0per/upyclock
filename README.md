@@ -20,3 +20,7 @@ SSID2pass
 SSIDn
 SSIDnpass
 ```
+## Timezone format
+Defaults to UTC. Add an integer for an integer amount of hours timezone delta.
+
+E.g. _1_ means UTC+1
