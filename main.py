@@ -20,36 +20,69 @@ class Pantalla:
         else:
             self.brillo += 1
 
+class Timechecker:
+    def __init__(self):
+        from boot import Reloj
+        self.clock=Reloj()
+        self.hora = self.clock.clhora()
+    def clcheck(self):
+        nuevahora = self.clock.clhora()
+        cambio = (nuevahora[:2] != self.hora[:2])
+        if cambio:
+            self.hora = nuevahora
+        return (cambio,self.hora)
+
+def seguimiento_reloj():
+    import utime
+    reloj=Timechecker()
+
+    global actualizar_Pantalla
+    global resultado
+
+    actualizar_Pantalla=False
+    resultado=('00','00','00')
+
+    while True:
+        (actualizar_Pantalla,resultado) = reloj.clcheck()
+        utime.sleep(0.1)
+
 def main():
-    import time,ntptime
+    import utime,ntptime, _thread
     from main import Pantalla
-    from boot import hora,reloj
+
+    _thread.start_new_thread(seguimiento_reloj,())
+
+    utime.sleep(2)
 
     display=Pantalla(2,4)
-    (horas,minutos,segundos)=(int(hora(reloj())[0]),int(hora(reloj())[1]),int(hora(reloj())[2]))
+    (horas,minutos,segundos)=(int(resultado[0]),int(resultado[1]),int(resultado[2]))
+    print('{horas}:{minutos}'.format(horas=horas,minutos=minutos))
     display.dibuja(horas,minutos)
 
     while True:
-        time.sleep(0.1)
-        if segundos != int(hora(reloj())[2]):
-            (horasold,minutosold,segundosold) = (horas,minutos,segundos)
-            (horas,minutos,segundos)=(int(hora(reloj())[0]),int(hora(reloj())[1]),int(hora(reloj())[2]))
-            if horas != horasold or minutos != minutosold:
-                display.dibuja(horas,minutos)
+        if actualizar_Pantalla:
+            if (horas,minutos)!=(int(resultado[0]),int(resultado[1])):
+                (horas,minutos,segundos)=(int(resultado[0]),int(resultado[1]),int(resultado[2]))
+                display.dibuja(horas, minutos)
                 print('{horas}:{minutos}'.format(horas=horas,minutos=minutos))
-                if (hora,minutos) == ('00','00'):
+
+                if (horas,minutos) == ('00','00'):
                     ntptime.settime()
 
 if __name__ == '__main__':
     try:
+        from boot import Reloj, logyreset, logyreset2
+        #import traceback
+
+        print('RUN: main')
+        clock=Reloj()
         main()
 
     except Exception as e:
         try:
-            from boot import logyreset,horacompleta, reloj
-            logyreset(horacompleta(reloj()),e)
-
-        except Exception as f:
-            logyreset2(f)
-
-        reset()
+            #e=traceback.format_exception()
+            print(e)
+            logyreset(clock.clhoracompleta(), 'main.py',e)
+        except Exception as e:
+            #e=traceback.format_exception()
+            logyreset2(e, 'main.py')

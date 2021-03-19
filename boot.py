@@ -6,7 +6,7 @@ def wifi_connect():
     ''' Network setup'''
     #print('RUN: boot.wifi_connect')
 
-    import network,time,os,ntptime
+    import network,utime,os,ntptime
 
     if 'wifi.dat' in os.listdir():      # Lee fichero de contraseñas
         with open('wifi.dat','r') as archivowifiDB:
@@ -42,7 +42,8 @@ def wifi_connect():
                     wifi.connect(activas[0][0].decode('ascii'),guardados[activas[0][0].decode('ascii')])
                     while not wifi.isconnected():
                         print('Esperando conexión')
-                        time.sleep(1)
+                        utime.sleep(1)
+            print('Conectado a {SSID}'.format(SSID = activas[0][0].decode('ascii')))
             ntptime.settime()
 
 def memoria():
@@ -52,55 +53,75 @@ def memoria():
     memoria = gc.mem_free()
     print('Memoria disponible: {memoria}'.format(memoria = memoria))
 
-def reloj():
-    import time
-    currenttime = []
-    for i in time.localtime(time.time())[:6]:
-        i = str(i)
-        currenttime.append(i)
-    with open('timezone.dat','r') as archivotimezone:
-        timezone = archivotimezone.readlines()[0]
-    currenttime[3] = str(int(currenttime[3])+int(timezone))
-    if currenttime[3] == '24':
-        currenttime[3] = '00'
+class Reloj:
+    def __init__(self):
+        import utime
+        with open('timezone.dat','r') as archivotimezone:
+            self.timezone = archivotimezone.readlines()[0]
 
-    for i in range(1,6):
-        if len(currenttime[i]) == 1:
-            currenttime[i] = '0'+currenttime[i]
-    return currenttime
+    def clupdate(self):
+        import utime
+        self.currenttime = []
+        for i in utime.localtime()[:6]:
+            i = str(i)
+            self.currenttime.append(i)
+        self.currenttime[3] = str(int(self.currenttime[3])+int(self.timezone))
+        if self.currenttime[3] == '24':
+            self.currenttime[3] = '00'
 
-def horacompleta(str_reloj):
-    texto = str_reloj[0]+str_reloj[1]+str_reloj[2] +' '+ str_reloj[3]+str_reloj[4] +':'+ str_reloj[5]
-    print('Hora: {texto}'.format(texto=texto))
-    return texto
+        for i in range(1,6):
+            if len(self.currenttime[i]) == 1:
+                self.currenttime[i] = '0'+self.currenttime[i]
 
-def hora(str_reloj):
-    return (str_reloj[3],str_reloj[4],str_reloj[5])
+    def clhora(self):
+        self.clupdate()
+        return (self.currenttime[3], self.currenttime[4],self.currenttime[5])
 
-def logyreset(horadelfallo,error):
+    def clhoracompleta(self):
+        self.clupdate()
+        texto = self.currenttime[0]+self.currenttime[1]+self.currenttime[2] +' '+self.currenttime[3]+self.currenttime[4] +':'+ self.currenttime[5]
+        return texto
+
+    def __str__(self):
+        return self.clhoracompleta()
+
+def logyreset(horadelfallo, funcion, error):
     from machine import reset
+    import utime
     with open('log.dat','ab') as archivo:
-        texto = horacompleta(reloj()) + ' boot.py ' + str(error)
+        texto = clock.clhoracompleta() +' '+funcion+' '+ str(error) + '\n'
         archivo.write(texto)
+    utime.sleep(5)
     reset()
 
-def logyreset2(error):
+def logyreset2(error,funcion):
     from machine import reset
     with open('log.dat','ab') as archivo:
-        texto = 'ERROR EN HORACOMPLETA PARA LOG - boot.py ' + str(error)
+        texto = 'ERROR EN HORACOMPLETA PARA LOG - '+funcion+' '+ str(error) + '\n'
         archivo.write(texto)
+    utime.sleep(5)
     reset()
 
 def main():
     try:
+        #import traceback
+
         print('RUN: boot')
+        global clock
+
+        clock=Reloj()
         memoria()
+        print(clock)
         wifi_connect()
-        horacompleta(reloj())
+        print(clock)
     except Exception as e:
         try:
-            logyreset(horacompleta(reloj()),e)
-        except Exception as f:
-            logyreset2(f)
+            #e=traceback.format_exc()
+            print(e)
+            logyreset(clock.clhoracompleta(),'boot.py', e)
+        except Exception as e:
+            #e=traceback.format_exc()
+            logyreset2(e,'boot.py')
+
 if __name__ == '__main__':
     main()
