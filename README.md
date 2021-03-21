@@ -9,21 +9,45 @@ HW-069:
  * VCC: 3v3
  * GND: GND
 
-## wifi.dat
-You need a wifi.dat file in the root folder.
+## Minimum required files & directory scheme
+All those files into microcontroller's root folder:
 
-Formatting goes as follows:
+* /boot.py
+* /main.py
+* /tm1637.py
+* /wifi.dat -> properly filled in
+* /log.dat
+* /timezone.dat properly filled in
+* /debug.cfg -> properly filled in
+
+### wifi.dat
+Example:
 
 ```
 SSID1
 SSID1pass
 SSID2
 SSID2pass
-...
-SSIDn
-SSIDnpass
 ```
-## timezone.dat
+
+### timezone.dat
 Defaults to UTC. Add an integer for an integer amount of hours timezone delta.
 
-E.g. _1_ (sans underscores) means UTC+1.
+Example:
+
+```
+1
+```
+
+Means UTC+1
+
+### debug.cfg
+Boolean value for selecting either lightsleep or normal (power-hungrier) utime.sleep(), so serial console doesnt get disrupted. Anything other than 'true' chooses lightsleep.
+
+Example:
+
+```
+False
+```
+
+Selects lightsleep.
