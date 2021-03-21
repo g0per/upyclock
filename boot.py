@@ -36,7 +36,7 @@ def wifi_connect():
                     if i[0].decode('ascii') in guardados:
                         activas.append(i)
                 if len(activas) == 0:
-                    print('ERROR: Redes configuradas no disponibles.')
+                    print('ERROR: Redes configuradas no disponibles')
                 else:
                     print('Conectando WiFi')
                     wifi.connect(activas[0][0].decode('ascii'),guardados[activas[0][0].decode('ascii')])
@@ -45,6 +45,14 @@ def wifi_connect():
                         utime.sleep(1)
             print('Conectado a {SSID}'.format(SSID = activas[0][0].decode('ascii')))
             ntptime.settime()
+
+def wifi_drop():
+    import network
+
+    print('Soltando conexión')
+    wifi = network.WLAN(network.STA_IF)
+    if wifi.isconnected():
+        wifi.active(False)
 
 def memoria():
     ''' Free memory'''
@@ -85,22 +93,34 @@ class Reloj:
     def __str__(self):
         return self.clhoracompleta()
 
-def logyreset(horadelfallo, funcion, error):
+def logyreset(horadelfallo, funcion, error, clock):
     from machine import reset
     import utime
+
     with open('log.dat','ab') as archivo:
         texto = clock.clhoracompleta() +' '+funcion+' '+ str(error) + '\n'
         archivo.write(texto)
+    print(texto)
     utime.sleep(5)
     reset()
 
 def logyreset2(error,funcion):
     from machine import reset
+    import utime
+
     with open('log.dat','ab') as archivo:
         texto = 'ERROR EN HORACOMPLETA PARA LOG - '+funcion+' '+ str(error) + '\n'
         archivo.write(texto)
+    print(texto)
     utime.sleep(5)
     reset()
+
+def sololog(msg, funcion, clock):
+    with open('log.dat','ab') as archivo:
+        texto = clock.clhoracompleta() +' '+funcion+' '+ str(msg) + '\n'
+        archivo.write(texto)
+    print(texto)
+
 
 def main():
     try:
@@ -110,6 +130,7 @@ def main():
         global clock
 
         clock=Reloj()
+        sololog('ARRANQUE','boot.py',clock)
         memoria()
         print(clock)
         wifi_connect()
@@ -118,7 +139,7 @@ def main():
         try:
             #e=traceback.format_exc()
             print(e)
-            logyreset(clock.clhoracompleta(),'boot.py', e)
+            logyreset(clock.clhoracompleta(),'boot.py', e, clock)
         except Exception as e:
             #e=traceback.format_exc()
             logyreset2(e,'boot.py')

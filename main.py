@@ -33,56 +33,85 @@ class Timechecker:
         return (cambio,self.hora)
 
 def seguimiento_reloj():
-    import utime
+    import utime, machine
     reloj=Timechecker()
 
     global actualizar_Pantalla
     global resultado
 
+    with open('debug.cfg','r') as settingscfg:
+            settings = settingscfg.readlines()
+    print(settings)
+    debugmode = settings[0].lower == 'true'
+    print('Settings: debugmode = {debugmode}'.format(debugmode = debugmode))
+
     actualizar_Pantalla=False
     resultado=('00','00','00')
+    rtc = machine.RTC()
 
     while True:
         (actualizar_Pantalla,resultado) = reloj.clcheck()
-        utime.sleep(0.1)
+        if debugmode:
+            utime.sleep(0.1)
+        else:
+            machine.lightsleep(100)
+
+
+def manda_horas(conjunto_resultado):
+    from main import Pantalla
+    display=Pantalla(2,4)
+    
+    (horas, minutos, segundos) = conjunto_resultado
+    print('{horas}:{minutos}'.format(horas=horas, minutos=minutos))
+    (horas, minutos, segundos) = (int(horas), int(minutos), int(segundos))
+    display.dibuja(horas, minutos)
+
+    return (horas, minutos, segundos)
+
 
 def main():
     import utime,ntptime, _thread
     from main import Pantalla
+    from boot import wifi_connect, wifi_drop, sololog
 
     _thread.start_new_thread(seguimiento_reloj,())
+    wifi_drop()
 
     utime.sleep(2)
 
-    display=Pantalla(2,4)
-    (horas,minutos,segundos)=(int(resultado[0]),int(resultado[1]),int(resultado[2]))
-    print('{horas}:{minutos}'.format(horas=horas,minutos=minutos))
-    display.dibuja(horas,minutos)
+    (horas, minutos, segundos)= manda_horas(resultado)
 
     while True:
         if actualizar_Pantalla:
             if (horas,minutos)!=(int(resultado[0]),int(resultado[1])):
-                (horas,minutos,segundos)=(int(resultado[0]),int(resultado[1]),int(resultado[2]))
-                display.dibuja(horas, minutos)
-                print('{horas}:{minutos}'.format(horas=horas,minutos=minutos))
+                (horas, minutos, segundos)= manda_horas(resultado)
 
-                if (horas,minutos) == ('00','00'):
-                    ntptime.settime()
+                if minutos == 0 and hours in (0,2):
+                    print('Poniendo en hora...')
+                    try:
+                        wifi_connect()
+                        wifi_drop()
+                    except Exception as e:
+                        msg = 'Error al conectar para poner en hora: {e}\n\tNo se sincroniza la hora'.format(e = e)
+                        print(msg)
+                        sololog(msg, 'main.py_SYNC_IF')
+            utime.sleep(0.05)
 
 if __name__ == '__main__':
     try:
-        from boot import Reloj, logyreset, logyreset2
+        from boot import Reloj, logyreset, logyreset2, sololog
         #import traceback
 
         print('RUN: main')
         clock=Reloj()
+        sololog('ARRANQUE','main.py', clock)
         main()
 
     except Exception as e:
         try:
             #e=traceback.format_exception()
             print(e)
-            logyreset(clock.clhoracompleta(), 'main.py',e)
+            logyreset(clock.clhoracompleta(), 'main.py',e, clock)
         except Exception as e:
             #e=traceback.format_exception()
             logyreset2(e, 'main.py')
