@@ -41,9 +41,8 @@ def seguimiento_reloj():
 
     with open('debug.cfg','r') as settingscfg:
             settings = settingscfg.readlines()
-    print(settings)
     debugmode = settings[0].lower == 'true'
-    print('Settings: debugmode = {debugmode}'.format(debugmode = debugmode))
+    print('debugmode = {debugmode}'.format(debugmode = debugmode))
 
     actualizar_Pantalla=False
     resultado=('00','00','00')
@@ -70,7 +69,7 @@ def manda_horas(conjunto_resultado):
 
 
 def main():
-    import utime,ntptime, _thread
+    import utime, _thread
     from main import Pantalla
     from boot import wifi_connect, wifi_drop, sololog
 
@@ -80,13 +79,14 @@ def main():
     utime.sleep(2)
 
     (horas, minutos, segundos)= manda_horas(resultado)
+    i=0
 
     while True:
         if actualizar_Pantalla:
             if (horas,minutos)!=(int(resultado[0]),int(resultado[1])):
                 (horas, minutos, segundos)= manda_horas(resultado)
 
-                if minutos == 0 and hours in (0,2):
+                if minutos == 0 and horas in (0,2,3):
                     print('Poniendo en hora...')
                     try:
                         wifi_connect()
@@ -95,7 +95,9 @@ def main():
                         msg = 'Error al conectar para poner en hora: {e}\n\tNo se sincroniza la hora'.format(e = e)
                         print(msg)
                         sololog(msg, 'main.py_SYNC_IF')
-            utime.sleep(0.05)
+            utime.sleep(0.8)
+        else:
+            utime.sleep(0.021)
 
 if __name__ == '__main__':
     try:
