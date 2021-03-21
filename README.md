@@ -1,6 +1,8 @@
 # upyclock
 Small micropython network-synced clock, using a ESP-WROOM32 and a HW069 I2C 4-digits 7-segments display.
 
+Compatible with any WiFi-capable micropython-capable multithreaded microcontroller, adjusting pinout for each usecase.
+
 ## pinout
 
 HW-069:
