@@ -25,95 +25,99 @@ class Timechecker:
         from boot import Reloj
         self.clock=Reloj()
         self.hora = self.clock.clhora()
-    def clcheck(self):
+    def clcheck(self, posicion):
         nuevahora = self.clock.clhora()
-        cambio = (nuevahora[:2] != self.hora[:2])
+        cambio = (nuevahora[:posicion+1] != self.hora[:posicion+1])   # Comprueba posición enviada. 0=h, 1=min, 2=s
         if cambio:
             self.hora = nuevahora
-        return (cambio,self.hora)
-
-def seguimiento_reloj():
-    import utime, machine
-    reloj=Timechecker()
-
-    global actualizar_Pantalla
-    global resultado
-
-    with open('debug.cfg','r') as settingscfg:
-            settings = settingscfg.readlines()
-    debugmode = settings[0].lower == 'true'
-    print('debugmode = {debugmode}'.format(debugmode = debugmode))
-
-    actualizar_Pantalla=False
-    resultado=('00','00','00')
-    rtc = machine.RTC()
-
-    while True:
-        (actualizar_Pantalla,resultado) = reloj.clcheck()
-        if debugmode:
-            utime.sleep(0.1)
-        else:
-            machine.lightsleep(100)
+        print(cambio,nuevahora)
+        return (cambio,nuevahora)   # aunque diga que no cambia y self.hora siga igual, los segundos sí que varían. Se retorna con la hora actual
 
 
-def manda_horas(conjunto_resultado):
+def manda_horas(conjunto_resultado,clk,dio):
+    import utime
     from main import Pantalla
-    display=Pantalla(2,4)
+    display=Pantalla(clk,dio)
     
     (horas, minutos, segundos) = conjunto_resultado
-    print('{horas}:{minutos}'.format(horas=horas, minutos=minutos))
+    print('{horas}:{minutos}:{segundos}'.format(horas=horas, minutos=minutos, segundos=segundos))
     (horas, minutos, segundos) = (int(horas), int(minutos), int(segundos))
     display.dibuja(horas, minutos)
 
     return (horas, minutos, segundos)
 
 
-def main():
-    import utime, _thread
+def self_test(clk,dio):
     from main import Pantalla
-    from boot import wifi_connect, wifi_drop, sololog
+    import utime
+    display=Pantalla(clk,dio)
 
-    _thread.start_new_thread(seguimiento_reloj,())
+    test = [
+    ('88','88','88'),
+    ('00','00','00')]
+
+    for i in test:
+        _=manda_horas(i,clk,dio)
+        utime.sleep(1)
+
+    del display
+
+
+def main(clk, dio):
+    from main import Timechecker
+    from boot import wifi_connect, wifi_drop
+    import machine, utime
+
     wifi_drop()
 
-    utime.sleep(2)
+    with open('debug.cfg','r') as debugcfg:
+        debugmode = debugcfg.readlines()[0].lower() == 'true'
+    print('debugmode = {debugmode}'.format(debugmode = debugmode))
 
-    (horas, minutos, segundos)= manda_horas(resultado)
-    i=0
+    reloj=Timechecker()
+    (cambio, lahora) = reloj.clcheck(1)
+    _ = manda_horas(lahora, clk, dio)
 
     while True:
-        if actualizar_Pantalla:
-            if (horas,minutos)!=(int(resultado[0]),int(resultado[1])):
-                (horas, minutos, segundos)= manda_horas(resultado)
-
-                if minutos == 0 and horas in (0,2,3):
-                    print('Poniendo en hora...')
-                    try:
-                        wifi_connect()
-                        wifi_drop()
-                    except Exception as e:
-                        msg = 'Error al conectar para poner en hora: {e}\n\tNo se sincroniza la hora'.format(e = e)
-                        print(msg)
-                        sololog(msg, 'main.py_SYNC_IF')
-            utime.sleep(0.8)
+        (cambio, lahora) = reloj.clcheck(1)
+        segundos = int(lahora[-1])
+        if cambio:
+            _ = manda_horas(lahora, clk, dio)
+            
+        if segundos <57:
+            delay=57-segundos
         else:
-            utime.sleep(0.021)
+            delay=0.1
+        print('sleep {delay}s'.format(delay=delay+0.005))
+        utime.sleep(0.005)
+
+        if debugmode:
+            utime.sleep(delay)
+        else:
+            delay=int(delay*1000)
+            machine.lightsleep(delay)
+        del delay
+
 
 if __name__ == '__main__':
     try:
         from boot import Reloj, logyreset, logyreset2, sololog
         #import traceback
 
+        CLK = 2
+        DIO = 4
+
         print('RUN: main')
+        self_test(CLK, DIO)
         clock=Reloj()
-        sololog('ARRANQUE','main.py', clock)
-        main()
+        sololog('ARRANQUE','main.py',clock.clhoracompleta())
+        main(CLK, DIO)
 
     except Exception as e:
         try:
             #e=traceback.format_exception()
             print(e)
-            logyreset(clock.clhoracompleta(), 'main.py',e, clock)
+            logyreset(clock.clhoracompleta(), 'main.py',e)
         except Exception as e:
             #e=traceback.format_exception()
             logyreset2(e, 'main.py')

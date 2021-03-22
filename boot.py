@@ -93,12 +93,12 @@ class Reloj:
     def __str__(self):
         return self.clhoracompleta()
 
-def logyreset(horadelfallo, funcion, error, clock):
+def logyreset(horadelfallo, funcion, error):
     from machine import reset
     import utime
 
     with open('log.dat','ab') as archivo:
-        texto = clock.clhoracompleta() +' '+funcion+' '+ str(error) + '\n'
+        texto = 'LR '+' '+horadelfallo+' '+funcion+' '+ str(error) + '\n'
         archivo.write(texto)
     print(texto)
     utime.sleep(5)
@@ -109,15 +109,15 @@ def logyreset2(error,funcion):
     import utime
 
     with open('log.dat','ab') as archivo:
-        texto = 'ERROR EN HORACOMPLETA PARA LOG - '+funcion+' '+ str(error) + '\n'
+        texto = 'LR2 ERROR EN HORACOMPLETA PARA LOG - '+funcion+' - '+ str(error) + '\n'
         archivo.write(texto)
     print(texto)
     utime.sleep(5)
     reset()
 
-def sololog(msg, funcion, clock):
+def sololog(msg, funcion, horadellog):
     with open('log.dat','ab') as archivo:
-        texto = clock.clhoracompleta() +' '+funcion+' '+ str(msg) + '\n'
+        texto = horadellog +' '+funcion+' '+ str(msg) + '\n'
         archivo.write(texto)
     print(texto)
 
@@ -130,7 +130,7 @@ def main():
         global clock
 
         clock=Reloj()
-        sololog('ARRANQUE','boot.py',clock)
+        sololog('ARRANQUE','boot.py',clock.clhoracompleta())
         memoria()
         print(clock)
         wifi_connect()
@@ -139,7 +139,7 @@ def main():
         try:
             #e=traceback.format_exc()
             print(e)
-            logyreset(clock.clhoracompleta(),'boot.py', e, clock)
+            logyreset(clock.clhoracompleta(),'boot.py', e)
         except Exception as e:
             #e=traceback.format_exc()
             logyreset2(e,'boot.py')
