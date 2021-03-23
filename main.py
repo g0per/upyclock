@@ -78,18 +78,26 @@ def main(clk, dio):
     (cambio, lahora) = reloj.clcheck(1)
     _ = manda_horas(lahora, clk, dio)
 
+    delaytext=0.005
+
     while True:
         (cambio, lahora) = reloj.clcheck(1)
-        segundos = int(lahora[-1])
         if cambio:
             _ = manda_horas(lahora, clk, dio)
+            minutos = lahora[1]
+            if int(minutos) in [0,20,40]:
+                wifi_connect()
+                wifi_drop()
+                (cambio, lahora) = reloj.clcheck(1)
+        segundos = int(lahora[-1])
+
             
         if segundos <57:
-            delay=57-segundos
+            delay=57-segundos-delaytext
         else:
-            delay=0.1
-        print('sleep {delay}s'.format(delay=delay+0.005))
-        utime.sleep(0.005)
+            delay=0.1-delaytext
+        print('sleep {delay}s'.format(delay=delay+delaytext))
+        utime.sleep(delaytext)
 
         if debugmode:
             utime.sleep(delay)
