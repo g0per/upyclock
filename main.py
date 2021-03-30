@@ -63,12 +63,45 @@ def self_test(clk,dio):
     del display
 
 
-def main(clk, dio):
+class Gestor:
+    def __init__(self,botonPINs):
+        global interrumpe
+        interrumpe = False
+
+        (horasPIN, minutosPIN, setupPIN) = botonPINs
+
+        import machine
+
+        self.horas = machine.Pin(horasPIN,machine.Pin.IN,machine.Pin.PULL_DOWN)
+        self.minutos = machine.Pin(minutosPIN,machine.Pin.IN,machine.Pin.PULL_DOWN)
+        self.setup = machine.Pin(setupPIN,machine.Pin.IN,machine.Pin.PULL_DOWN)
+
+    def ciclo(self):
+        import utime
+
+        while True:
+            interrumpe = self.setup.value()
+            if interrumpe:
+                print('Setup ON')
+
+
+
+
+def main(pantallaPINs, botonPINs):
     from main import Timechecker
     from boot import wifi_connect, wifi_drop
-    import machine, utime
+    import machine, utime, _thread
+
+    (clk, dio) = pantallaPINs
 
     wifi_drop()
+
+    global debugmode, botonsetup
+    botonsetup = False
+
+    interrupciones = Gestor(botonPINs)
+    _thread.start_new_thread(interrupciones.ciclo,())
+
 
     with open('debug.cfg','r') as debugcfg:
         debugmode = debugcfg.readlines()[0].lower() == 'true'
@@ -96,6 +129,7 @@ def main(clk, dio):
             delay=57-segundos-delaytext
         else:
             delay=0.1-delaytext
+        #delay=0.1-delaytext
         print('sleep {delay}s'.format(delay=delay+delaytext))
         utime.sleep(delaytext)
 
@@ -115,11 +149,18 @@ if __name__ == '__main__':
         CLK = 2
         DIO = 4
 
+        horasPIN = 14
+        minutosPIN = 27
+        setupPIN = 12
+
+        pantallaPINs = (CLK, DIO)
+        botonPINs = (horasPIN, minutosPIN, setupPIN)
+
         print('RUN: main')
         self_test(CLK, DIO)
         clock=Reloj()
         sololog('ARRANQUE','main.py',clock.clhoracompleta())
-        main(CLK, DIO)
+        main(pantallaPINs, botonPINs)
 
     except Exception as e:
         try:

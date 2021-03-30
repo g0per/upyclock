@@ -93,6 +93,23 @@ class Reloj:
     def __str__(self):
         return self.clhoracompleta()
 
+    def cladjust(self,posicion)
+        if posicion == 'h':
+            if self.currenttime[3] == '23':
+                self.currenttime[3] = '00'
+                return
+            else:
+                pos = 3
+        elif posicion == 'm':
+            if self.currenttime[4] == '59':
+                self.currenttime[4] = '00'
+            else:
+                pos = 4
+        else:
+            return
+        self.currenttime[posicion] = str(int(self.currenttime[posicion])+1)
+
+
 def logyreset(horadelfallo, funcion, error):
     from machine import reset
     import utime
