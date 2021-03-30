@@ -85,7 +85,7 @@ def main(clk, dio):
         if cambio:
             _ = manda_horas(lahora, clk, dio)
             minutos = lahora[1]
-            if int(minutos) in [0,20,40]:
+            if int(minutos) == 50:
                 wifi_connect()
                 wifi_drop()
                 (cambio, lahora) = reloj.clcheck(1)
