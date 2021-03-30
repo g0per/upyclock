@@ -93,7 +93,7 @@ class Reloj:
     def __str__(self):
         return self.clhoracompleta()
 
-    def cladjust(self,posicion)
+    def cladjust(self,posicion):
         if posicion == 'h':
             if self.currenttime[3] == '23':
                 self.currenttime[3] = '00'
